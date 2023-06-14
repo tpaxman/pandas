@@ -112,19 +112,37 @@ sep : str, default {_default_sep}
 delimiter : str, default ``None``
     Alias for sep.
 header : int, list of int, None, default 'infer'
-    Row number(s) to use as the column names, and the start of the
-    data.  Default behavior is to infer the column names: if no names
-    are passed the behavior is identical to ``header=0`` and column
-    names are inferred from the first line of the file, if column
-    names are passed explicitly then the behavior is identical to
-    ``header=None``. Explicitly pass ``header=0`` to be able to
-    replace existing names. The header can be a list of integers that
-    specify row locations for a multi-index on the columns
-    e.g. [0,1,3]. Intervening rows that are not specified will be
-    skipped (e.g. 2 in this example is skipped). Note that this
-    parameter ignores commented lines and empty lines if
-    ``skip_blank_lines=True``, so ``header=0`` denotes the first line of
-    data rather than the first line of the file.
+    Index or indices corresponding to line number(s) in the CSV file to be read
+    as DataFrame column labels (using zero-based indexing). The behavior
+    associated with passing each type of value is described here:
+    * Single integer: denotes a row index the associated line will be read as column labels.
+    * List of integers: denote the associated lines will be read as column labels in a multi-index.
+    * If ``None`` is passed: none of the lines in the file will be interpreted as headers and columns will instead by labelled by column index (or by values passed to the ``names`` parameter).
+    * If ``'infer'`` is passed (default): behaves as ``header=0`` if no ``names`` were passed, otherwise as ``header=None``.
+
+    * If an index is passed: the associated line will be read as column labels.
+    * If a list of indices is passed: the associated lines will be read as column labels in a multi-index.
+    * If ``None`` is passed: none of the lines in the file will be interpreted as headers and columns will instead by labelled by column index (or by values passed to the ``names`` parameter).
+    * If ``'infer'`` is passed (default): behaves as ``header=0`` if no ``names`` were passed, otherwise as ``header=None``.
+
+
+    * If ``names`` is None, ``header=0`` (i.e., column names are taken from the first row).
+    * If ``names`` is specified, ``header=None`` (i.e., column labels are taken from ``names`` and the CSV file is all interpreted as data).
+    Note: if ``skip_blank_lines=True``, ``header`` instead references the first non-blank, non-commented line rather than the first line in the file.
+
+    # Row number(s) to use as the column names, and the start of the
+    # data.  Default behavior is to infer the column names: if no names
+    # are passed the behavior is identical to ``header=0`` and column
+    # names are inferred from the first line of the file, if column
+    # names are passed explicitly then the behavior is identical to
+    # ``header=None``. Explicitly pass ``header=0`` to be able to
+    # replace existing names. The header can be a list of integers that
+    # specify row locations for a multi-index on the columns
+    # e.g. [0,1,3]. Intervening rows that are not specified will be
+    # skipped (e.g. 2 in this example is skipped). Note that this
+    # parameter ignores commented lines and empty lines if
+    # ``skip_blank_lines=True``, so ``header=0`` denotes the first line of
+    # data rather than the first line of the file.
 names : array-like, optional
     List of column names to use. If the file contains a header row,
     then you should explicitly pass ``header=0`` to override the column names.
