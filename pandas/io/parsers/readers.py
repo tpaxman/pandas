@@ -228,17 +228,30 @@ verbose : bool, default False
     Indicate number of ``NA`` values placed in non-numeric columns.
 skip_blank_lines : bool, default True
     If ``True``, skip over blank lines rather than interpreting as ``NaN`` values.
-parse_dates : bool or list of int or names or list of lists or dict, \
-default False
-    The behavior is as follows:
+parse_dates : bool, list of Hashable, list of list or dict of \
+{{ Hashable : list }}, default False
+    Parse specified columns as ``datetime`` type. The columns to be parsed as dates
+    are defined by the following arguments:
 
-    * ``bool``. If ``True`` -> try parsing the index.
-    * ``list`` of ``int`` or names. e.g. If ``[1, 2, 3]`` -> try parsing columns 1, 2, 3
-      each as a separate date column.
-    * ``list`` of ``list``. e.g.  If ``[[1, 3]]`` -> combine columns 1 and 3 and parse
-      as a single date column.
-    * ``dict``, e.g. ``{{'foo' : [1, 3]}}`` -> parse columns 1, 3 as date and call
-      result 'foo'
+    * ``True``: index column(s) as specified by ``index_col``
+    * ``False``: no columns (default)
+    * ``list[int]``: columns corresonding to each index
+    * ``list[str]``: columns corresponding to each column header as date
+    * ``list[tuple[str]]``: parse columns of each multi-index column header as date
+      (when ``header`` results in :class:`~pandas.MultiIndex`).
+
+    Multiple columns can also be combined and parsed as a single ``datetime`` column
+    by passing the following arguments:
+
+    * ``list[list[Hashable]]``: each sub-list is a set of column names or indices that are
+      to be combined into a single column and parsed as date. The default result column
+      header will be the underscore-concatenated string of all combined columns.
+      # TODO: show example of this with multi-index. E.g.,
+      ``[['year1', 'month1', 'day1'], ['year2', 'month2', 'day2']]`` would combine to
+      form columns ``year1_month1_day1`` and ``year2_month2_day2``.
+    * ``dict[Hashable, list[Hashable]]``: similiar to passing list of lists, but the key
+      is used to rename the resultant column. E.g.
+      ``{{'date1': ['year1', 'month1', 'day1'], 'date2': ['year2', 'month2', 'day2']}}``
 
     If a column or index cannot be represented as an array of ``datetime``,
     say because of an unparsable value or a mixture of timezones, the column
