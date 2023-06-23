@@ -227,20 +227,25 @@ verbose : bool, default False
     Indicate number of ``NA`` values placed in non-numeric columns.
 skip_blank_lines : bool, default True
     If ``True``, skip over blank lines rather than interpreting as ``NaN`` values.
-parse_dates : bool or list of int or names or list of lists or dict, \
-default False
-    
-    # TODO: clarify the type hints for parse_dates
+parse_dates : bool, list of int, list of str, list of lists or dict of \
+{{ Hashable : list }}, default False
+    Try parsing specified columns as date type. The behavior is as follows:
 
-    The behavior is as follows:
-
-    * ``bool``. If ``True`` -> try parsing the index.
-    * ``list`` of ``int`` or names. e.g. If ``[1, 2, 3]`` -> try parsing columns 1, 2, 3
-      each as a separate date column.
-    * ``list`` of ``list``. e.g.  If ``[[1, 3]]`` -> combine columns 1 and 3 and parse
-      as a single date column.
-    * ``dict``, e.g. ``{{'foo' : [1, 3]}}`` -> parse columns 1, 3 as date and call
-      result 'foo'
+    * ``True``: try parsing the index as dates (when specified by ``index_col``)
+    * ``False``: attempt no date parsing (default).
+    * ``list[int]``: parse columns of each index as date
+    * ``list[str]``: parse columns corresponding to each header as date
+    * ``list[tuple[str]]``: parse columns of each multi-index column as date (when
+      ``header`` results in :class:`~pandas.MultiIndex`.
+    * ``list[list[Any]]``: each sub-list is a set of column names or indices that are
+      to be combined into a single column and parsed as date. The default result column
+      header will be the underscore-concatenated string of all combined columns.
+      # TODO: show example of this with multi-index. E.g.,
+      ``[['year1', 'month1', 'day1'], ['year2', 'month2', 'day2']]`` would combine to
+      form columns ``year1_month1_day1`` and ``year2_month2_day2``.
+    * ``dict[Hashable, list[Hashable]]``: similiar to passing list of lists, but the key
+      is used to rename the resultant column. E.g.
+      ``{{'date1': ['year1', 'month1', 'day1'], 'date2': ['year2', 'month2', 'day2']}}``
 
     If a column or index cannot be represented as an array of ``datetime``,
     say because of an unparsable value or a mixture of timezones, the column
