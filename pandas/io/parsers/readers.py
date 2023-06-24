@@ -137,11 +137,11 @@ header : int, Sequence of int, 'infer' or None, default 'infer'
       (i.e., do not take column labels from file and use ``names`` instead).
 
 names : Sequence of Hashable, optional
-    Sequence of column names to use. If the file contains that you want to override,
+    Unique sequence of column labels to use. If the file contains that you want to override,
     you must explicitly pass ``header=0`` in addition to passing ``names``.
     Duplicates in this list are not allowed.
 index_col : Hashable, Sequence of Hashable or False, optional
-  Column(s) to use as the row labels of the :class:`~pandas.DataFrame`, either given as
+  Column label(s) to use as the row labels of the :class:`~pandas.DataFrame`, either given as
   string name or column index. If a sequence of ``int`` or ``str`` is given, a
   :class:`~pandas.MultiIndex` is created.
 
@@ -151,7 +151,7 @@ index_col : Hashable, Sequence of Hashable or False, optional
 usecols : list of Hashable or Callable, optional
     Subset of columns to keep. If list-like, all elements must either
     be positional (i.e. integer indices into the columns, e.g. ``[0,1,2]``) or strings
-    that correspond to column names provided either by the user in ``names`` or
+    that correspond to column labels provided either by the user in ``names`` or
     inferred from the document header row(s) (e.g., ``['foo', 'bar', 'baz']``). 
     If ``names`` are given, the document header row(s) are not taken into account.
     Element order is ignored, so ``usecols=[0, 1]`` is the same as ``[1, 0]``.
@@ -254,7 +254,7 @@ parse_dates : bool, list of Hashable, list of list or dict of \
     Multiple columns can also be combined and parsed as a single ``datetime`` column
     by passing the following arguments:
 
-    * ``list[list[Hashable]]``: each sub-list is a set of column names or indices that are
+    * ``list[list[Hashable]]``: each sub-list is a set of column labels or indices that are
       to be combined into a single column and parsed as date. The default result column
       header will be the underscore-concatenated string of all combined columns.
       # TODO: show example of this with multi-index. E.g.,
