@@ -101,49 +101,59 @@ filepath_or_buffer : str, path object or file-like object
     By file-like object, we refer to objects with a ``read()`` method, such as
     a file handle (e.g. via builtin ``open`` function) or ``StringIO``.
 sep : str, default {_default_sep}
-    Delimiter to use. If ``sep=None``, the C engine cannot automatically detect
-    the separator, but the Python parsing engine can, meaning the latter will
-    be used and automatically detect the separator from only the first valid
-    row of the file by Python's builtin sniffer tool, ``csv.Sniffer``.
-    In addition, separators longer than 1 character and different from
-    ``'\s+'`` will be interpreted as regular expressions and will also force
-    the use of the Python parsing engine. Note that regex delimiters are prone
-    to ignoring quoted data. Regex example: ``'\r\t'``.
+    Character or regex pattern acting as the delimiter. 
+
+    * If ``None``: automatically detect the separator based on first valid row. 
+      (Requires ``engine='python'`` as it uses the built-in Python sniffer tool
+      ``csv.Sniffer``.)
+    * If single character: treat as delimiter and use C ``engine`` unless otherwise
+      specified.
+    * If ``'\s+'``: treat consecutive whitespace as delimiter and use C ``engine``
+      unless otherwise specified. (Valid with Python or C ``engine`` but not PyArrow.)
+    * If multi-character string: treat as regex pattern and use Python ``engine``.
+      (Not valid with ``engine='c'`` or ``engine='pyarrow'``.) Note that regex
+      delimiters are prone to ignoring quoted data. Regex example: ``'\r\t'``.
+
 delimiter : str, optional
-    Alias for ``sep``.
+    Alias for ``sep``. Note: only either ``sep`` or ``delimiter`` can be specified.
 header : int, Sequence of int, 'infer' or None, default 'infer'
-    Row number(s) to use as the column names, and the start of the
-    data.  Default behavior is to infer the column names: if no ``names``
-    are passed the behavior is identical to ``header=0`` and column
-    names are inferred from the first line of the file, if column
-    names are passed explicitly to ``names`` then the behavior is identical to
-    ``header=None``. Explicitly pass ``header=0`` to be able to
-    replace existing names. The header can be a list of integers that
-    specify row locations for a :class:`~pandas.MultiIndex` on the columns
-    e.g. ``[0,1,3]``. Intervening rows that are not specified will be
-    skipped (e.g. 2 in this example is skipped). Note that this
-    parameter ignores commented lines and empty lines if
-    ``skip_blank_lines=True``, so ``header=0`` denotes the first line of
-    data rather than the first line of the file.
+    Index or indices of line(s) in the file that will be used as the :class:`DataFrame`
+    column labels (using zero-based indexing) and the start of the data.
+    Note: if ``skip_blank_lines=True``, ``header`` instead references the first
+    non-blank, uncommented line rather than the first line in the file.
+    The behavior is as follows:
+
+    * Single row index: use values in the associated row as column labels. (``0``
+      refers to the first line of the file.)
+    * List of row indices: combine values in these rows as column labels in a 
+      :class:`MultiIndex`. Any intervening rows not specified will be skipped, e.g.,
+      ``header=[1,3]`` means rows 0 and 2 will be skipped and the data will start
+      at row index 4.
+    * ``None``: do not take column labels from file. Columns will be labelled with
+      their column indices (or using ``names`` if specified). Typically used when the
+      file does not contain any headers.
+    * ``'infer'`` (default): behaves as ``header=0`` (i.e., use the first row as column
+      labels) unless ``names`` is specified, in which case assume ``header=None``
+      (i.e., do not take column labels from file and use ``names`` instead).
+
 names : Sequence of Hashable, optional
-    List of column names to use. If the file contains a header row,
-    then you should explicitly pass ``header=0`` to override the column names.
+    Sequence of column names to use. If the file contains that you want to override,
+    you must explicitly pass ``header=0`` in addition to passing ``names``.
     Duplicates in this list are not allowed.
 index_col : Hashable, Sequence of Hashable or False, optional
   Column(s) to use as the row labels of the :class:`~pandas.DataFrame`, either given as
-  string name or column index. If a sequence of ``int`` / ``str`` is given, a
-  :class:`~pandas.MultiIndex` is used.
+  string name or column index. If a sequence of ``int`` or ``str`` is given, a
+  :class:`~pandas.MultiIndex` is created.
 
-  Note: ``index_col=False`` can be used to force ``pandas`` to *not* use the first
-  column as the index, e.g. when you have a malformed file with delimiters at
-  the end of each line.
+  Note: passing ``False`` will force ``pandas`` to *not* use the first
+  column as the index (e.g., when you have a malformed file with delimiters at
+  the end of each line).
 usecols : list of Hashable or Callable, optional
-    Return a subset of the columns. If list-like, all elements must either
-    be positional (i.e. integer indices into the document columns) or strings
+    Subset of columns to keep. If list-like, all elements must either
+    be positional (i.e. integer indices into the columns, e.g. ``[0,1,2]``) or strings
     that correspond to column names provided either by the user in ``names`` or
-    inferred from the document header row(s). If ``names`` are given, the document
-    header row(s) are not taken into account. For example, a valid list-like
-    ``usecols`` parameter would be ``[0, 1, 2]`` or ``['foo', 'bar', 'baz']``.
+    inferred from the document header row(s) (e.g., ``['foo', 'bar', 'baz']``). 
+    If ``names`` are given, the document header row(s) are not taken into account.
     Element order is ignored, so ``usecols=[0, 1]`` is the same as ``[1, 0]``.
     To instantiate a :class:`~pandas.DataFrame` from ``data`` with element order
     preserved use ``pd.read_csv(data, usecols=['foo', 'bar'])[['foo', 'bar']]``
@@ -151,17 +161,17 @@ usecols : list of Hashable or Callable, optional
     ``pd.read_csv(data, usecols=['foo', 'bar'])[['bar', 'foo']]``
     for ``['bar', 'foo']`` order.
 
-    If callable, the callable function will be evaluated against the column
+    If ``Callable``, the function will be evaluated against the column
     names, returning names where the callable function evaluates to ``True``. An
     example of a valid callable argument would be ``lambda x: x.upper() in
     ['AAA', 'BBB', 'DDD']``. Using this parameter results in much faster
     parsing time and lower memory usage.
 dtype : dtype or dict of {{Hashable : dtype}}, optional
-    Data type for data or columns. E.g., ``{{'a': np.float64, 'b': np.int32,
-    'c': 'Int64'}}``
+    Data type to apply to entire :class:`DataFrame` or individual columns. E.g.,
+    ``{{'a': np.float64, 'b': np.int32, 'c': 'Int64'}}``
     Use ``str`` or ``object`` together with suitable ``na_values`` settings
     to preserve and not interpret ``dtype``.
-    If ``converters`` are specified, they will be applied INSTEAD
+    If ``converters`` are specified, they will be applied *instead*
     of ``dtype`` conversion.
 
     .. versionadded:: 1.5.0
@@ -186,7 +196,7 @@ true_values : list, optional
 false_values : list, optional
     Values to consider as ``False`` in addition to case-insensitive variants of 'False'.
 skipinitialspace : bool, default False
-    Skip spaces after delimiter.
+    If ``True``, skip spaces after delimiter.
 skiprows : int, list of int or Callable, optional
     Line numbers to skip (0-indexed) or number of lines to skip (``int``)
     at the start of the file.
@@ -206,8 +216,9 @@ Hashable}}, optional
     + fill("', '".join(sorted(STR_NA_VALUES)), 70, subsequent_indent="    ")
     + """'.
 keep_default_na : bool, default True
-    Whether or not to include the default ``NaN`` values when parsing the data.
-    Depending on whether ``na_values`` is passed in, the behavior is as follows:
+    
+    Flag that dictates whether to include default ``NaN`` values when parsing the data.
+    Behaviour depends on whether ``na_values`` are specified, as follows:
 
     * If ``keep_default_na`` is ``True``, and ``na_values`` are specified, ``na_values``
       is appended to the default ``NaN`` values used for parsing.
