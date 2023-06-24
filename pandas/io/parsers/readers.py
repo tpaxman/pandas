@@ -137,9 +137,14 @@ header : int, Sequence of int, 'infer' or None, default 'infer'
       (i.e., do not take column labels from file and use ``names`` instead).
 
 names : Sequence of Hashable, optional
-    Unique sequence of column labels to use. If the file contains that you want to override,
-    you must explicitly pass ``header=0`` in addition to passing ``names``.
-    Duplicates in this list are not allowed.
+    Unique sequence of column labels to use. To override the header in the file, you
+    must also specify ``header=0``, otherwise the header row will be unintentionally
+    preserved as a row of values in the data. To specify :class:`MultiIndex` column
+    labels, pass a sequence of tuples, each containing the column labels for each level
+    (e.g., ``[('a',1), ('a',2), ('b',1), ('b',2)]``). If ``names`` contains more items
+    than the number of columns in the data, it will add empty columns to the
+    :class:`DataFrame` (i.e., populated with ``NaN``). Duplicates in this list are not
+    allowed.
 index_col : Hashable, Sequence of Hashable or False, optional
   Column label(s) to use as the row labels of the :class:`~pandas.DataFrame`, either given as
   string name or column index. If a sequence of ``int`` or ``str`` is given, a
